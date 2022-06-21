@@ -41,6 +41,18 @@ class CountHandler : TextWebSocketHandler() {
                 count++
                 broadcast(msg.copy(countValue = count))
             }
+            MessageType.DECREMENT -> {
+                if (count > 0 ){
+                   count--
+                }else{
+                    count = 0
+                }
+                broadcast(msg.copy(countValue = count))
+            }
+            MessageType.RESET -> {
+                count = 0
+                broadcast(msg.copy(countValue = count))
+            }
             else -> {
                 println("Invalid type, type not found!")
             }
