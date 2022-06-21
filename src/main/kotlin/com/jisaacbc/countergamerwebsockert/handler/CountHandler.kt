@@ -1,9 +1,9 @@
 package com.jisaacbc.countergamerwebsockert.handler
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jisaacbc.countergamerwebsockert.model.dto.InputMessageDTO
 import com.jisaacbc.countergamerwebsockert.model.MessageType
 import com.jisaacbc.countergamerwebsockert.model.User
+import com.jisaacbc.countergamerwebsockert.model.entity.Message
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong
 class CountHandler : TextWebSocketHandler() {
     private val sessionList = HashMap<WebSocketSession, User>()
     private val uids = AtomicLong(0)
-    private val mapper = jacksonObjectMapper()
+    private var count = 0;
 
     @Throws(Exception::class)
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
@@ -29,13 +29,17 @@ class CountHandler : TextWebSocketHandler() {
     }
 
     override fun handleTextMessage(session: WebSocketSession, message: TextMessage) {
-        val msg = Json.decodeFromString<InputMessageDTO>(message.payload)
+        val msg = Json.decodeFromString<InputMessageDTO>(message.payload).toMessage()
 
         when(msg.type) {
             MessageType.JOIN -> {
                 val user = User(uids.getAndIncrement(), msg.name)
                 sessionList[session] = user
-                emit(session, msg.copy(text = "Welcome!"))
+                emit(session, msg.copy(countValue = count))
+            }
+            MessageType.INCREMENT -> {
+                count++
+                broadcast(msg.copy(countValue = count))
             }
             else -> {
                 println("Invalid type, type not found!")
@@ -44,11 +48,15 @@ class CountHandler : TextWebSocketHandler() {
         println(msg)
     }
 
-    private fun emit(session: WebSocketSession, message: InputMessageDTO) {
+    private fun emit(session: WebSocketSession, message: Message) {
         return session.sendMessage(
             TextMessage(
                 Json.encodeToString(message)
             )
         )
     }
+
+    private fun broadcast(msg: Message) = sessionList.forEach { emit(it.key, msg) }
+    private fun broadcastToOthers(me: WebSocketSession, msg: Message) =
+        sessionList.filterNot { it.key == me }.forEach { emit(it.key, msg) }
 }
