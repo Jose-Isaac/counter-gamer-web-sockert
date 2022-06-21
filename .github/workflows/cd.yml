@@ -49,7 +49,7 @@ jobs:
           --version-label "ver-${{ github.sha }}" \
           --description "commit-sha-${{ github.sha }}"
     - name: Deploy new ElasticBeanstalk Application Version
-      run: aws elasticbeanstalk update-environment --environment-name Countergamer-env --version-label "ver-${{ github.sha }}"
+      run: aws elasticbeanstalk update-environment --environment-name Countergamer-test1 --version-label "ver-${{ github.sha }}"
     
         
     
